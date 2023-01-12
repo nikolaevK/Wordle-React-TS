@@ -1,86 +1,132 @@
-import type { NextPage } from 'next'
-import Head from 'next/head'
-import Image from 'next/image'
+import type { NextPage } from "next";
+import { useEffect, useState } from "react";
+import Letter from "../components /Letter";
+import Line from "../components /Line";
+
+const ALPHABET = [
+  "a",
+  "b",
+  "c",
+  "d",
+  "e",
+  "f",
+  "g",
+  "h",
+  "i",
+  "j",
+  "k",
+  "l",
+  "m",
+  "n",
+  "o",
+  "p",
+  "q",
+  "r",
+  "s",
+  "t",
+  "u",
+  "v",
+  "w",
+  "x",
+  "y",
+  "z",
+];
 
 const Home: NextPage = () => {
+  const [solution, setSolution] = useState("");
+  const [letter, setLetter] = useState("");
+  const [wordBank, setWordBank] = useState<string[]>(Array(6).fill(null));
+  const [gameWon, setGameWon] = useState(false);
+  const [youLost, setYouLost] = useState(0);
+
+  useEffect(() => {
+    const fetchWords = async () => {
+      const response = await fetch("/words.json");
+      const words = await response.json();
+
+      // Randomly picking a word which needs to be guesses
+      setSolution(words[Math.floor(Math.random() * words.length)]);
+    };
+
+    fetchWords();
+  }, []);
+
+  // Takes a value (letter) from a key from a Letter component
+  function updateWord(event: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+    const target = event.target as HTMLButtonElement;
+    setLetter(letter + target.value);
+  }
+
+  function handleSubmit() {
+    if (gameWon) return;
+    if (letter.length > 5) {
+      window.alert("Too many letters, delete extra ones");
+    }
+    if (letter.length !== 5) return;
+
+    const isCorrect = solution === letter;
+    if (isCorrect) {
+      setGameWon(true);
+    }
+
+    const newGuesses = [...wordBank];
+    newGuesses[wordBank.findIndex((val) => val == null)] = letter;
+    setWordBank(newGuesses);
+
+    setLetter("");
+    // Counts the number of words, if 6, loss
+    setYouLost((prev) => prev + 1);
+  }
+
+  function deleteLetter() {
+    setLetter(letter.slice(0, -1));
+  }
+
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center py-2">
-      <Head>
-        <title>Create Next App</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
+    <section className="flex flex-col justify-end items-center min-h-screen pb-36 mt-12">
+      {gameWon && <div>You Win</div>}
+      {youLost === 6 && <div>You Lost</div>}
+      <div className="h-full w-full flex flex-col justify-center items-center">
+        {wordBank.map((word, index) => {
+          const isCurrentLetter =
+            index === wordBank.findIndex((val) => val == null);
+          return (
+            <div key={index} className="">
+              <Line
+                solution={solution}
+                word={isCurrentLetter ? letter : word ?? ""}
+              />
+            </div>
+          );
+        })}
+      </div>
 
-      <main className="flex w-full flex-1 flex-col items-center justify-center px-20 text-center">
-        <h1 className="text-6xl font-bold">
-          Welcome to{' '}
-          <a className="text-blue-600" href="https://nextjs.org">
-            Next.js!
-          </a>
-        </h1>
+      <div className="grid grid-cols-6 gap-2 mt-16 w-[80vw] h-[30vh]">
+        {ALPHABET.map((letter, index) => (
+          <Letter
+            key={index}
+            letter={letter.toUpperCase()}
+            updateWord={updateWord}
+          />
+        ))}
+      </div>
 
-        <p className="mt-3 text-2xl">
-          Get started by editing{' '}
-          <code className="rounded-md bg-gray-100 p-3 font-mono text-lg">
-            pages/index.tsx
-          </code>
-        </p>
-
-        <div className="mt-6 flex max-w-4xl flex-wrap items-center justify-around sm:w-full">
-          <a
-            href="https://nextjs.org/docs"
-            className="mt-6 w-96 rounded-xl border p-6 text-left hover:text-blue-600 focus:text-blue-600"
-          >
-            <h3 className="text-2xl font-bold">Documentation &rarr;</h3>
-            <p className="mt-4 text-xl">
-              Find in-depth information about Next.js features and its API.
-            </p>
-          </a>
-
-          <a
-            href="https://nextjs.org/learn"
-            className="mt-6 w-96 rounded-xl border p-6 text-left hover:text-blue-600 focus:text-blue-600"
-          >
-            <h3 className="text-2xl font-bold">Learn &rarr;</h3>
-            <p className="mt-4 text-xl">
-              Learn about Next.js in an interactive course with quizzes!
-            </p>
-          </a>
-
-          <a
-            href="https://github.com/vercel/next.js/tree/canary/examples"
-            className="mt-6 w-96 rounded-xl border p-6 text-left hover:text-blue-600 focus:text-blue-600"
-          >
-            <h3 className="text-2xl font-bold">Examples &rarr;</h3>
-            <p className="mt-4 text-xl">
-              Discover and deploy boilerplate example Next.js projects.
-            </p>
-          </a>
-
-          <a
-            href="https://vercel.com/import?filter=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className="mt-6 w-96 rounded-xl border p-6 text-left hover:text-blue-600 focus:text-blue-600"
-          >
-            <h3 className="text-2xl font-bold">Deploy &rarr;</h3>
-            <p className="mt-4 text-xl">
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
-        </div>
-      </main>
-
-      <footer className="flex h-24 w-full items-center justify-center border-t">
-        <a
-          className="flex items-center justify-center gap-2"
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+      <div className="flex gap-3 mt-4 ">
+        <button
+          onClick={handleSubmit}
+          className="bg-gray-500 rounded-md text-white px-4 py-4"
         >
-          Powered by{' '}
-          <Image src="/vercel.svg" alt="Vercel Logo" width={72} height={16} />
-        </a>
-      </footer>
-    </div>
-  )
-}
+          Enter
+        </button>
+        <button
+          onClick={deleteLetter}
+          className="bg-gray-500 rounded-md text-white px-4 py-4"
+        >
+          Delete
+        </button>
+      </div>
+    </section>
+  );
+};
 
-export default Home
+export default Home;
